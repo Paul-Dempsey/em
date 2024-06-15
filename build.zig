@@ -10,7 +10,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         .version = .{ .major = 0, .minor = 1, .patch = 0 },
-        .link_libc = true,
+        .link_libc = false,
     });
     em_lib.addIncludePath(b.path("src/em-lib"));
     em_lib.installHeader(b.path("src/em-lib/em-lib.h"), "emlib.h");
@@ -34,6 +34,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = false,
     });
     exe.addIncludePath(b.path("src"));
     exe.linkLibrary(em_lib);

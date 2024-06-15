@@ -3,7 +3,7 @@
 #ifndef EM_LIB_H_INCLUDED
 #define EM_LIB_H_INCLUDED
 
-#include "include/em-common.h"
+#include "include/em-alloc.h"
 #include "include/em-cc.h"
 #include "include/em-compressor.h"
 #include "include/em-hardware.h"

@@ -31,12 +31,13 @@ typedef union PackedMidiMessage {
         uint8_t data1;
         uint8_t data2;
         uint8_t pad;
-    };
+    } bytes;
 } PackedMidiMessage;
 
-inline MidiStatus midi_status(PackedMidiMessage msg) { return (MidiStatus)(msg.status_byte & STATUS_MASK); }
-inline uint8_t midi_channel(PackedMidiMessage msg) { return msg.status_byte & CHANNEL_MASK; }
+inline uint8_t midi_status(PackedMidiMessage msg) { return msg.bytes.status_byte & STATUS_MASK; }
+inline uint8_t midi_channel(PackedMidiMessage msg) { return msg.bytes.status_byte & CHANNEL_MASK; }
 
+PackedMidiMessage MakeRawBase(uint8_t status_byte, uint8_t value, uint8_t value2);
 PackedMidiMessage MakeRaw(uint8_t status, uint8_t channel, uint8_t value, uint8_t value2);
 
 inline PackedMidiMessage MakeNoteOff(uint8_t channel, uint8_t note, uint8_t velocity) {
@@ -62,7 +63,10 @@ inline PackedMidiMessage MakePitchBend(uint8_t channel, uint8_t loBend, uint8_t 
 }
 
 /// @brief Callback to handle a packed MIDI message
-typedef int (*MidiHandler)(void *context, PackedMidiMessage message);
+/// @param context optional data to be passed to handler function
+/// @param message Packed MIDI message to handle
+/// @return true to continue processing, false to halt Midi processing
+typedef uint8_t (*MidiHandler)(void *context, PackedMidiMessage message);
 
 #ifdef __cplusplus
 } // extern "C"

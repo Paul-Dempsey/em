@@ -1,9 +1,10 @@
 // Copyright (C) Paul Chase Dempsey
-#include <assert.h>
+//#include <assert.h>
 #include "../include/em-pedal.h"
 #include "../include/em-cc.h"
 
-void init_pedal(PedalInfo* pedal, uint8_t jack) {
+void init_pedal(PedalInfo* pedal, uint8_t jack)
+{
     pedal->value = 0;
     pedal->jack = jack;
     switch (jack) {
@@ -14,7 +15,7 @@ void init_pedal(PedalInfo* pedal, uint8_t jack) {
             pedal->cc = EM_CC_Sostenuto;
             break;
         default:
-            assert(false);
+            //assert(false);
             pedal->jack = PedalId_One;
             pedal->cc = EM_CC_Sustain;
             break;
@@ -24,7 +25,8 @@ void init_pedal(PedalInfo* pedal, uint8_t jack) {
     pedal->kind = PedalType_None;
 }
 
-void reset_pedal(PedalInfo* pedal) {
+void reset_pedal(PedalInfo* pedal)
+{
     pedal->value = 0;
     switch (pedal->jack) {
         case PedalId_One:
@@ -34,7 +36,7 @@ void reset_pedal(PedalInfo* pedal) {
             pedal->cc = EM_CC_Sostenuto;
             break;
         default:
-            assert(false);
+            //assert(false);
             break;
     };
     pedal->min = 0;
