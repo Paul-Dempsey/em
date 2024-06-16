@@ -11,7 +11,9 @@ extern "C" {
 typedef enum MacroToMidiError {
     M2MError_Ok = 0,
     M2MError_InvalidMacroNumber = 1,
-    M2MError_ValueOutOfRange = 2,
+    M2MError_Underflow = 2,
+    M2MError_Overflow = 3,
+
 } MacroToMidiError;
 
 /// @brief For a given macro number and value for that macro, call handler with the MIDI to send to the device
