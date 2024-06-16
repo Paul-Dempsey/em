@@ -65,7 +65,7 @@ inline PackedMidiMessage MakePitchBend(uint8_t channel, uint8_t loBend, uint8_t 
 /// @brief Callback to handle a packed MIDI message
 /// @param context optional data to be passed to handler function
 /// @param message Packed MIDI message to handle
-/// @return true to continue processing, false to halt Midi processing
+/// @return 0 to continue processing, nonzero to halt Midi processing (error or other stop signal)
 typedef uint8_t (*MidiHandler)(void *context, PackedMidiMessage message);
 
 #ifdef __cplusplus

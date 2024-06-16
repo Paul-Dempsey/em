@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+#define INVALID_CC 0xFF
+
 /// @brief Channel 1,2 CCs
 typedef enum EM_CC {
     EM_CC_BankSelect          = 0, // assignable for Y/Z
@@ -20,12 +22,12 @@ typedef enum EM_CC {
     EM_CC_MonoSwitch          = 9,
     EM_CC_FineTune            = 10, // 4..124 = -60..+60 cents 
     EM_CC_Expression          = 11, // Z
-    EM_CC_Macro_I             = 12,
-    EM_CC_Macro_II            = 13,
-    EM_CC_Macro_III           = 14,
-    EM_CC_Macro_IV            = 15,
-    EM_CC_Macro_V             = 16,
-    EM_CC_Macro_VI            = 17,
+    EM_CC_M1                  = 12,
+    EM_CC_M2                  = 13,
+    EM_CC_M3                  = 14,
+    EM_CC_M4                  = 15,
+    EM_CC_M5                  = 16,
+    EM_CC_M6                  = 17,
     EM_CC_PostLevel           = 18,
     EM_CC_AudioInputLevel     = 19,
     EM_CC_R1                  = 20,
@@ -43,10 +45,98 @@ typedef enum EM_CC {
     EM_CC_AdvancePreset       = 31,
 
     // cc 86/97 extended macros
-    EM_CC_MEx1First  = 40,
-    EM_CC_MEx1Last   = 63,
-    EM_CC_MEx2First  = 102,
-    EM_CC_MEx2Last   = 119,
+    EM_CC_XM1First  = 40,
+    EM_CC_XM1Last   = 63,
+    EM_CC_XM2First  = 102,
+    EM_CC_XM2Last   = 119,
+
+	EM_CC_M7        = 40,
+    EM_CC_M8        = 41,
+    EM_CC_M9        = 42,
+    EM_CC_M10       = 43,
+    EM_CC_M11       = 44,
+    EM_CC_M12       = 45,
+    EM_CC_M13       = 46,
+    EM_CC_M14       = 47,
+	EM_CC_M15       = 48,
+    EM_CC_M16       = 49,
+    EM_CC_M17       = 50,
+    EM_CC_M18       = 51,
+    EM_CC_M19       = 52,
+    EM_CC_M20       = 53,
+    EM_CC_M21       = 54,
+    EM_CC_M22       = 55,
+	EM_CC_M23       = 56,
+    EM_CC_M24       = 57,
+    EM_CC_M25       = 58,
+    EM_CC_M26       = 59,
+    EM_CC_M27       = 60,
+    EM_CC_M28       = 61,
+    EM_CC_M29       = 62,
+    EM_CC_M30       = 63,
+
+	EM_CC_M31       = 102,
+    EM_CC_M32       = 103,
+    EM_CC_M33       = 104,
+    EM_CC_M34       = 105,
+    EM_CC_M35       = 106,
+    EM_CC_M36       = 107,
+    EM_CC_M37       = 108,
+    EM_CC_M38       = 109,
+    EM_CC_M39       = 110,
+	EM_CC_M40       = 111,
+    EM_CC_M41       = 112,
+    EM_CC_M42       = 113,
+    EM_CC_M43       = 114,
+    EM_CC_M44       = 115,
+    EM_CC_M45       = 116,
+    EM_CC_M46       = 117,
+    EM_CC_M47       = 118,
+    EM_CC_M48       = 119,
+
+ 	EM_CC_M49       = 40,
+    EM_CC_M50       = 41,
+    EM_CC_M51       = 42,
+    EM_CC_M52       = 43,
+    EM_CC_M53       = 44,
+    EM_CC_M54       = 45,
+    EM_CC_M55       = 46,
+    EM_CC_M56       = 47,
+ 	EM_CC_M57       = 48,
+    EM_CC_M58       = 49,
+    EM_CC_M59       = 50,
+    EM_CC_M60       = 51,
+    EM_CC_M61       = 52,
+    EM_CC_M62       = 53,
+    EM_CC_M63       = 54,
+    EM_CC_M64       = 55,
+	EM_CC_M65       = 56,
+    EM_CC_M66       = 57,
+    EM_CC_M67       = 58,
+    EM_CC_M68       = 59,
+    EM_CC_M69       = 60,
+    EM_CC_M70       = 61,
+    EM_CC_M71       = 62,
+    EM_CC_M72       = 63,
+
+ 	EM_CC_M73       = 102,
+    EM_CC_M74       = 103,
+    EM_CC_M75       = 104,
+    EM_CC_M76       = 105,
+    EM_CC_M77       = 106,
+    EM_CC_M78       = 107,
+    EM_CC_M79       = 108,
+    EM_CC_M80       = 109,
+    EM_CC_M81       = 110,
+	EM_CC_M82       = 111,
+    EM_CC_M83       = 112,
+    EM_CC_M84       = 113,
+    EM_CC_M85       = 114,
+    EM_CC_M86       = 115,
+    EM_CC_M87       = 116,
+    EM_CC_M88       = 117,
+    EM_CC_M89       = 118,
+    EM_CC_M90       = 119,
 
     EM_CC_Sustain             = 64,
     EM_CC_RoundEqual          = 65,
@@ -76,7 +166,7 @@ typedef enum EM_CC {
     EM_CC_R5                  = 95,
     EM_CC_R6                  = 96,
 
-    EM_CC_MacroFractionEx     = 97, // Lsb for macro 49..90
+    EM_CC_MFractionEx     = 97, // Lsb for macro 49..90
 } EM_CC;
 
 
@@ -95,7 +185,7 @@ typedef enum EM_CC16 {
     EM_CC16_MatrixValue         = 44, // optionally preceded by md lo/hi
     EM_CC16_MatrixOp            = 45,
     EM_CC16_NeighborIndex       = 46, // matrix index to right of matHiliteWide (if any)
-    EM_CC16_ModifyMatrixIndex   = 47, // matrix list index for edit, preceded by ccModMatVal
+    EM_CC16_ModifyMatrixIndex   = 47, // matrix list index for edit, preceded by EM_CC_XModMatVal
     EM_CC16_ModifyMatrixValue   = 48, // numeric in-place matrix edit, ccModMatInd follows
     EM_CC16_DataStream          = 56, // v=stream id (DataStream enum)
     EM_CC16_TuningGrid          = 51,

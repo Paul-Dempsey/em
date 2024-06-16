@@ -11,8 +11,9 @@ extern "C" {
 
 typedef enum MidiFileError {
     MF_Ok,
-    MF_InvalidMidiFile,
-    MF_InsufficientData,
+    MF_Stopped,          // midi handler returned nonzero
+    MF_InvalidMidiFile,  // invalid Midi data for EM preset
+    MF_InsufficientData, // passsed data is an incomplete MIDI file
 
 } MidiFileError;
 

@@ -42,14 +42,16 @@ struct Buffer {
     inline uint8_t* Head() { return data + pos; }
     inline uint8_t* End() { return data + size; }
 
-    BufferError ReadByte(uint8_t * dest) {
+    BufferError ReadByte(uint8_t * dest)
+    {
         if (pos >= size) return BufferError::EndOfData;
         *dest = data[pos++];
         if (counting) read_count++;
         return BufferError::Ok;
     }
 
-    BufferError Read(uint8_t* bytes, uint32_t count) {
+    BufferError Read(uint8_t* bytes, uint32_t count)
+    {
         if (count + pos > size) return BufferError::EndOfData;
         auto scan = Head();
         for (auto i = 0; i < count; ++i) {
@@ -60,14 +62,16 @@ struct Buffer {
         return BufferError::Ok;
     }
 
-    BufferError Skip(uint32_t count) {
+    BufferError Skip(uint32_t count)
+    {
         if (count + pos > size) return BufferError::EndOfData;
         pos += count;
         if (counting) read_count += count;
         return BufferError::Ok;
     }
 
-    BufferError ReadU16(uint16_t* result) {
+    BufferError ReadU16(uint16_t* result)
+    {
         uint8_t buf[2];
         BufferError e;
         uint8_t* scan = &buf[0];
@@ -78,7 +82,8 @@ struct Buffer {
         return BufferError::Ok;
     }
 
-    BufferError ReadU32(uint32_t* result) {
+    BufferError ReadU32(uint32_t* result)
+    {
         uint8_t buf[4];
         BufferError e;
         uint8_t* scan = &buf[0];
@@ -91,7 +96,8 @@ struct Buffer {
         return BufferError::Ok;
     }
 
-    BufferError ReadVariableLength(uint32_t* result) {
+    BufferError ReadVariableLength(uint32_t* result)
+    {
         uint32_t acc = 0;
         int count = 0;
         BufferError e;
@@ -107,7 +113,8 @@ struct Buffer {
         return BufferError::Ok;
     }
 
-    BufferError SkipVariableLength() {
+    BufferError SkipVariableLength()
+    {
         BufferError e;
         uint32_t length;
         if (BufferError::Ok != (e = ReadVariableLength(&length))) return e;
@@ -117,14 +124,16 @@ struct Buffer {
 
 };
 
-bool same(uint32_t length, uint8_t* const b1, uint8_t* const b2) {
+bool same(uint32_t length, uint8_t* const b1, uint8_t* const b2)
+{
     for (uint32_t i = 0; i < length; ++i) {
         if (b1[i] != b2[i]) return false;
     }
     return true;
 }
 
-MidiFileError ParseMidiFileData(uint32_t length, uint8_t* bytes, void *handlerContext, MidiHandler handlerFn) {
+MidiFileError ParseMidiFileData(uint32_t length, uint8_t* bytes, void *handlerContext, MidiHandler handlerFn)
+{
     BufferError e;
     Buffer buffer;
     uint8_t chunk[4];
@@ -184,7 +193,7 @@ MidiFileError ParseMidiFileData(uint32_t length, uint8_t* bytes, void *handlerCo
                 if (BufferError::Ok != (e = buffer.ReadByte(&second_byte))) return MidiFileError::MF_InsufficientData;
             }
             auto msg = MakeRawBase(running_status, first_byte, second_byte);
-            if (!handlerFn(handlerContext, msg)) return  MidiFileError::MF_Ok;
+            if (handlerFn(handlerContext, msg)) return MidiFileError::MF_Stopped;
             continue;
         }
 
@@ -222,7 +231,7 @@ MidiFileError ParseMidiFileData(uint32_t length, uint8_t* bytes, void *handlerCo
                     if (BufferError::Ok != (e = buffer.ReadByte(&b2))) return MidiFileError::MF_InsufficientData;
                 }
                 auto msg = MakeRawBase(first_byte, b1, b2);
-                if (!handlerFn(handlerContext, msg)) return  MidiFileError::MF_Ok;
+                if (handlerFn(handlerContext, msg)) return MidiFileError::MF_Stopped;
            }
         }
     }
