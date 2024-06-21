@@ -1,5 +1,6 @@
 const std = @import("std");
-const max_align = @import("builtin").target.maxIntAlignment();
+const builtin = @import("builtin");
+const max_align = builtin.target.c_type_alignment(std.Target.CType.ulonglong);
 const pad_amount = std.mem.alignForward(usize, @sizeOf(usize), max_align);
 
 // must be set before using external

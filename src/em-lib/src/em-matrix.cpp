@@ -1,83 +1,7 @@
-#include "../include/em-alloc.h"
-#include "../include/em-cc.h"
-#include "../include/em-compressor.h"
-#include "../include/em-hardware.h"
-#include "../include/em-pedal.h"
-#include "../include/em-recirculator.h"
-#include "../include/em-util.hpp"
-#include "../include/em-matrix.h"
+// Copyright (C) Paul Chase Dempsey
+#include "em-matrix.hpp"
 
-struct EaganMatrix {
-    uint16_t firmware_version;
-    uint16_t cvc_version;
-    EM_Hardware hardware;
-    PedalInfo pedal1;
-    PedalInfo pedal2;
-    Recirculator recirculator;
-    uint16_t recirculator_dials;
-    Compressor compressor;
-    uint8_t ch01cc[128];
-    uint8_t ch16cc[128];
-    uint8_t matrix_table[128];
-
-    EaganMatrix();
-    void initDefault();
-    int receiveMidi(PackedMidiMessage message);
-    
-};
-
-// C dispatch
 uint64_t MatrixSize() { return sizeof(EaganMatrix); }
-
-void* CreateMatrix()
-{
-    void * mem = AllocMemory(MatrixSize());
-    if (mem) {
-        EaganMatrix * em = reinterpret_cast<EaganMatrix *>(mem);
-        em->initDefault();
-        return mem;
-    } else {
-        return nullptr;
-    }
-}
-
-
-
-inline void SetMatrixBool(void* matrix, MatrixPokeId id, uint8_t value)
-{
-    EaganMatrix * em = reinterpret_cast<EaganMatrix *>(matrix);
-    em->matrix_table[id] = value ? 1 : 0;
-}
-inline uint8_t GetMatrixBool(void* matrix, MatrixPokeId id) {
-    EaganMatrix * em = reinterpret_cast<EaganMatrix *>(matrix);
-    return em->matrix_table[id] ? 1 : 0;
-}
-
-void SetPreserveSurface(void* matrix, uint8_t preserve) {
-    SetMatrixBool(matrix, MatrixPokeId::MPID_PreserveSurface, preserve);
-}
-void SetPreservePedal(void* matrix, uint8_t preserve){
-    SetMatrixBool(matrix, MatrixPokeId::MPID_PreservePedal, preserve);
-}
-void SetPreserveMidiEncoding(void* matrix, uint8_t preserve) {
-    SetMatrixBool(matrix, MatrixPokeId::MPID_PreserveMidiEncoding, preserve);
-}
-uint8_t GetPreserveSurface(void* matrix) {
-    return GetMatrixBool(matrix, MatrixPokeId::MPID_PreserveSurface);
-}
-uint8_t GetPreservePedal(void* matrix) {
-    return GetMatrixBool(matrix, MatrixPokeId::MPID_PreservePedal);
-}
-uint8_t GetPreserveMidiEncoding(void* matrix) {
-    return GetMatrixBool(matrix, MatrixPokeId::MPID_PreserveMidiEncoding);
-}
-
-
-int EaganMatrixReceiveMidi(void* matrix, PackedMidiMessage message) {
-    return reinterpret_cast<EaganMatrix*>(matrix)->receiveMidi(message);
-}
-
-// EM Impl
 
 EaganMatrix::EaganMatrix() {
     initDefault();
@@ -88,16 +12,145 @@ void EaganMatrix::initDefault()
     firmware_version = 0;
     cvc_version = 0;
     hardware = EM_Hardware_Unknown;
-    init_pedal(&pedal1, PedalId_One);
-    init_pedal(&pedal2, PedalId_Two);
+    midi_state.reset();
+    sustain = 0;
+    sostenuto1 = 0;
+    sostenuto2 = 0;
 
-    zero_bytes(ch01cc, 128);
-    zero_bytes(ch16cc, 128);
-    zero_bytes(matrix_table, 128);
+    preserve_surface = false;
+    preserve_pedal = false;
+    preserve_midi_encoding = false;
 
+    bend_range = 96;
+    round_mode = 0; // TODO: enum
+
+    pedal_shift = 48;
+    multi_split_lo = 0;
+    multi_split_hi = 0;
+    split_point = 0;
+
+    jack1 = 0;
+    pedal1_min = 0;
+    pedal1_max = MAX14;
+    pedal1_cc = EM_CC_Sustain;
+    pedal1_kind = PedalType_None;
+
+    jack2 = 0;
+    pedal2_min = 0;
+    pedal2_max = MAX14;
+    pedal2_cc = EM_CC_Sostenuto;
+    pedal2_kind = PedalType_None;
+
+    // Recirculator (according to Empty.mid)
+    recirculator_kind = R8orKind_ShortReverb;
+    recirculator_dials[R8orValue_R1]= 99;
+    recirculator_dials[R8orValue_R2]= 53;
+    recirculator_dials[R8orValue_R3]= 17;
+    recirculator_dials[R8orValue_R4]= 40;
+    recirculator_dials[R8orValue_R5]= 40;
+    recirculator_dials[R8orValue_R6]= 40;
+    recirculator_dials[R8orValue_RMix]= 37;
+
+    comp_tanh_type      = 0;
+    threshold_drive     = MAX7;
+    attack_cutoff       = MID7;
+    ratio_makeup        = MID7;
+    comp_tanh_mix       = 0;
+
+    eq_tilt  = MID7;
+    eq_frequency  = MID7;
+    eq_mix   = 0;
+
+    headphone_level = 0;
+    line_level      = 0;
+    pre_level       = MID7;
+    post_level      = MID7;
+    audio_level     = 0;
+    attenuation     = 0;
+    zero_bytes(preset_name, sizeof(preset_name));
+    zero_bytes(preset_text, sizeof(preset_text));
+    zero_bytes(recirculator_dials, sizeof(recirculator_dials));
+    zero_bytes(macro, sizeof(macro));
+
+    midi_out_context = nullptr;
+    midi_out_handler = nullptr;
 }
 
-int EaganMatrix::receiveMidi(PackedMidiMessage message)
+void EaganMatrix::GetPedal(PedalId id, PedalInfo *pedal)
 {
+    if (nullptr == pedal) return;
+    switch (id) {
+    case PedalId_One:
+        pedal->value = jack1;
+        pedal->cc = pedal1_cc;
+        pedal->min = pedal1_min;
+        pedal->max = pedal1_max;
+        pedal->kind = pedal1_kind;
+        pedal->jack = PedalId_One;
+        break;
+
+    case PedalId_Two:
+        pedal->value = jack2;
+        pedal->cc = pedal2_cc;
+        pedal->min = pedal2_min;
+        pedal->max = pedal2_max;
+        pedal->kind = pedal2_kind;
+        pedal->jack = PedalId_Two;
+        break;
+
+    default: 
+        pedal->jack = PedalId_Invalid;
+        break;
+    }
+}
+
+uint8_t EaganMatrix::SetMidiRate(uint8_t rate)
+{
+    uint8_t task = TaskId_MidiTxFull;
+    switch (rate) {
+    case 1:
+        midi_rate = rate;
+        break;
+    case 3:
+        midi_rate = rate;
+        task = TaskId_MidiTxThird;
+        break;
+    case 20:
+        midi_rate = rate;
+        task = TaskId_MidiTxTweenth;
+        break;
+    default:
+        return midi_rate;
+    }
+    sendMidi(MakeCC(CHANNEL16, EM_CC16_Task, task));
+    return midi_rate;
+}
+
+void EaganMatrix::RequestConfiguration() {
+    sendMidi(MakeCC(CHANNEL16, EM_CC16_Task, TaskId_ConfigToMidi));
 
 }
+void EaganMatrix::RequestUserPresets() {
+    sendMidi(MakeCC(CHANNEL16, EM_CC16_Task, TaskId_UserToMidi));
+}
+void EaganMatrix::RequestSystemPresets() {
+    sendMidi(MakeCC(CHANNEL16, EM_CC16_Task, TaskId_SysToMidi));
+}
+
+void EaganMatrix::PreviousSysPreset() {
+    sendMidi(MakeCC(CHANNEL16, EM_CC16_Task, TaskId_DecPreset));
+}
+void EaganMatrix::NextSysPreset() {
+    sendMidi(MakeCC(CHANNEL16, EM_CC16_Task, TaskId_IncPreset));
+}
+void EaganMatrix::ResetCalibration() {
+    sendMidi(MakeCC(CHANNEL16, EM_CC16_Task, TaskId_DoResetCalib));
+}
+void EaganMatrix::RefineCalibration() {
+    sendMidi(MakeCC(CHANNEL16, EM_CC16_Task, TaskId_DoRefineCalib));
+}
+
+// void EaganMatrix::ToggleSurfaceAlignment() {
+//     sendMidi(MakeCC(CHANNEL16, EM_CC16_Task, TaskId_SurfAlign));
+// }
+

@@ -20,11 +20,15 @@ pub fn build(b: *std.Build) void {
         .files = &.{
             "em-compressor.cpp",
             "em-hardware.cpp",
+            "em-macro.cpp",
             "em-matrix.cpp",
+            "em-matrix-midi.cpp",
+            "em-matrix-wrap.cpp",
             "em-pedal.cpp",
+            "em-recirculator.cpp",
             "em-rounding.cpp",
-            "midi-message.cpp",
             "midi-file.cpp",
+            "midi-message.cpp",
         },
     });
     b.installArtifact(em_lib);

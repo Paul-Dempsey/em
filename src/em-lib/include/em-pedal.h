@@ -22,10 +22,11 @@ typedef enum PedalType {
 typedef enum PedalId {
     PedalId_One = 0,
     PedalId_Two = 1,
+    PedalId_Invalid = 0xFF,
 } PedalId;
 
 typedef struct PedalInfo {
-    uint8_t value;
+    uint16_t value;
     uint8_t cc;
     uint8_t min;
     uint8_t max;
@@ -33,6 +34,7 @@ typedef struct PedalInfo {
     uint8_t jack; // PedalId
 } PedalInfo;
 
+const char * PedalKindName(uint8_t kind);
 void init_pedal(PedalInfo* pedal, uint8_t jack);
 void reset_pedal(PedalInfo* pedal);
 

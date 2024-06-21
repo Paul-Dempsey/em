@@ -9,6 +9,13 @@ extern "C" {
 #endif
 
 #define INVALID_CC 0xFF
+#define MAX14      0x3F80 // 1.0 value for 14' 0..1 controllers (max high 7', zero low 7': 127<<7)
+#define ZERO14	   0x2000 // 0.0 value for 14' -1..1 controllers
+#define MID7       64     /// middle value for 7' bytes
+#define MAX7       127
+#define CHANNEL16  15
+#define CHANNEL01  0
+#define CHANNEL02  1
 
 /// @brief Channel 1,2 CCs
 typedef enum EM_CC {
@@ -41,8 +48,8 @@ typedef enum EM_CC {
     EM_CC_RoundInitial        = 28,
     EM_CC_Jack1               = 29, // 14-bit 0-1 with MFraction
     EM_CC_Jack2               = 30,
-
     EM_CC_AdvancePreset       = 31,
+    EM_CC_Category            = 32,
 
     // cc 86/97 extended macros
     EM_CC_XM1First  = 40,
@@ -165,8 +172,17 @@ typedef enum EM_CC {
     EM_CC_Comp_Tanh_Mix       = 93, // Compressor_Tanh ch1/ch2?
     EM_CC_R5                  = 95,
     EM_CC_R6                  = 96,
-
-    EM_CC_MFractionEx     = 97, // Lsb for macro 49..90
+    EM_CC_MHiFraction         = 97, // Lsb for macro 49..90
+    // 102..119 Macros M73..M90
+    EM_CC_SoundOff            = 120,
+    EM_CC_Default             = 121,
+    EM_CC_Local               = 122,
+    EM_CC_AllOff              = 123,
+    EM_CC_OmniOff             = 124,
+    EM_CC_OmniOn              = 125,
+    EM_CC_MonoOn              = 126,
+    EM_CC_PolyOn              = 127,
+    EM_CC_Mpe                 = 128,
 } EM_CC;
 
 
@@ -187,8 +203,10 @@ typedef enum EM_CC16 {
     EM_CC16_NeighborIndex       = 46, // matrix index to right of matHiliteWide (if any)
     EM_CC16_ModifyMatrixIndex   = 47, // matrix list index for edit, preceded by EM_CC_XModMatVal
     EM_CC16_ModifyMatrixValue   = 48, // numeric in-place matrix edit, ccModMatInd follows
-    EM_CC16_DataStream          = 56, // v=stream id (DataStream enum)
+
     EM_CC16_TuningGrid          = 51,
+
+    EM_CC16_DataStream          = 56, // v=stream id (DataStream enum)
 
     // Mini_LoopBack:
     // Dim    | (v & 0x07)      | dim = -6, -12, -18, -24 dB
@@ -212,11 +230,12 @@ typedef enum EM_CC16 {
     // CVC Version sent in Hi/Mid/Lo order
     EM_CC16_CVCHi_Hardware      = 104, // ((value & 0x03) << 14) = high bits of CVC version | ((value & 0x7c) >> 2) = Hardware
     EM_CC16_CVCMid              = 105, // CVC version bits 13..7
-    EM_CC16_CVCLo               = 106, //  CVC version bits 6..0
+    EM_CC16_CVCLo               = 106, // CVC version bits 6..0
     EM_CC16_TxKyHeart           = 107,
     EM_CC16_Task                = 109, // task request or report. See TaskId enum
     EM_CC16_Info                = 110, // see InfoId enum
     EM_CC16_EMStatus            = 111, // (value & 0x7) = led | ((value & 0x70) >> 4) = aes detected
+    EM_CC16_StorePreset         = 112, // cc0 = CAT_Edit, CAT_User, CAT_System (File2 only)
     EM_CC16_RxKyHeart           = 113,
     EM_CC16_txUsg_rxDis         = 114, // tx: 32*dsp# + 4%units (0-25) | rx: sensor utility
     EM_CC16_LogDump             = 115, // (value & 0x03) 0 starts, 1..3 role.ord request for next block of data in log | if hi bits set, no dump
@@ -230,6 +249,136 @@ typedef enum EM_CC16 {
     EM_CC16_CRC4                = 126, // config CRC low-hi 4'
     // zig fmt: on
 } EM_CC16;
+
+typedef enum DataStream {
+    DS_PresetName = 0,
+    DS_PresetText = 1,
+    DS_Graph = 2,
+    DS_Graph01 = 3,
+    DS_Graph02 = 4,
+    DS_GraphT0 = 5,
+    DS_GraphT1 = 6,
+    DS_Log = 7,
+    DS_UpdateFile2 = 8,
+    DS_Demo = 9,
+    DS_Float = 10,
+    DS_Kinetic = 11,
+    DS_BiqSin = 12,
+    DS_System = 13,
+    DS_Convolution = 14,
+    DS_Thumbnail = 15,
+    DS_MacroHi = 16,
+    DS_MacroLo = 17,
+    DS_MacroUses = 18,
+    DS_PokeForm = 19,
+    DS_PokeMatrix = 20,
+    DS_PokeGraph = 21,
+    DS_PokeGraph01 = 22,
+    DS_PokeGraph02 = 23,
+    DS_PokeGraphT0 = 24,
+    DS_PokeGraphT1 = 25,
+    DS_PokeBiqSin = 26,
+    DS_PokeConvolution = 27,
+    DS_End = 127,
+    DS_None = 0xff,
+} DataStream;
+
+typedef enum CategoryTag {
+    CAT_User = 0,
+    CAT_AC = 1,
+    CAT_AD = 2,
+    CAT_AG = 3,
+    CAT_AI = 3,
+    CAT_AN = 5,
+    CAT_AT = 6,
+    CAT_BA = 7,
+    CAT_BB = 8, 
+    CAT_BG = 9,
+    CAT_BH = 10,
+    CAT_BI = 11,
+    CAT_BM = 12,
+    CAT_BO = 13,
+    CAT_BR = 13,
+    CAT_C1 = 15,
+    CAT_CH = 16,
+    CAT_CL = 17,
+    CAT_CM = 18,
+    CAT_CN = 19,
+    CAT_CV = 20,
+    CAT_DA = 21,
+    CAT_DF = 22,
+    CAT_DM = 23,
+    CAT_DP = 23,
+    CAT_DS = 25,
+    CAT_DV = 26,
+    CAT_DI = 27,
+    CAT_DO = 28,
+    CAT_DT = 29,
+    CAT_DY = 30,
+    CAT_EC = 31,
+    CAT_EL = 32,
+    CAT_EM = 33,
+    CAT_EN = 33,
+    CAT_EP = 35,
+    CAT_EV = 36,
+    CAT_FL = 37,
+    CAT_FM = 38,
+    CAT_HM = 39,
+    CAT_HY = 40,
+    CAT_IC = 41,
+    CAT_IN = 42,
+    CAT_KI = 43,
+    CAT_KY = 43,
+    CAT_LE = 45,
+    CAT_LF = 46,
+    CAT_LP = 47,
+    CAT_LY = 48,
+    CAT_MD = 49,
+    CAT_MI = 50,
+    CAT_MM = 51,
+    CAT_MO = 52,
+    CAT_MT = 53,
+    CAT_NA = 53,
+    CAT_NO = 55,
+    CAT_OR = 56,
+    CAT_OS = 57,
+    CAT_OJ = 58,
+    CAT_OP = 59,
+    CAT_OT = 60,
+    CAT_PA = 61,
+    CAT_PE = 62,
+    CAT_PT = 63,
+    CAT_PL = 63,
+    CAT_PO = 65,
+    CAT_PR = 66,
+    CAT_RD = 67,
+    CAT_RS = 68,
+    CAT_RN = 69,
+    CAT_RO = 70,
+    CAT_RV = 71,
+    CAT_SB = 72,
+    CAT_SD = 73,
+    CAT_SE = 73,
+    CAT_SH = 75,
+    CAT_SI = 76,
+    CAT_SO = 77,
+    CAT_SP = 78,
+    CAT_SR = 79,
+    CAT_SS = 80,
+    CAT_ST = 81,
+    CAT_SU = 82,
+    CAT_SV = 83,
+    CAT_SY = 83,
+    CAT_TA = 85,
+    CAT_UT = 86,
+    CAT_VO = 87,
+    CAT_WA = 88,
+    CAT_WB = 89,
+    CAT_WI = 90,
+    CAT_WO = 91,
+    CAT_Edit = 126,
+    CAT_System = 127,
+} Category;
 
 typedef enum LedId {
     LedId_Off         = 0,

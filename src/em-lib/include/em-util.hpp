@@ -4,10 +4,11 @@
 #define EM_UTIL_H_INCLUDED
 #include <stdint.h>
 
-inline bool hiBit(uint8_t v) { return 0 != (v & 0x80); }
-inline void zero_bytes(uint8_t* data, size_t count) {
+inline bool hiBit(uint8_t v) { return v & 0x80; }
+inline void zero_bytes(void* data, size_t count) {
+    uint8_t* poke = (uint8_t*)data;
     for (auto i = 0; i < count; ++i) {
-        *data++ = 0;
+        *poke++ = 0;
     }
 }
 #endif
